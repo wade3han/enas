@@ -1,5 +1,7 @@
 # Efficient Neural Architecture Search via Parameter Sharing
 
+## _This code is modified for experiments. Supported by Python 3.5_
+
 Authors' implementation of "Efficient Neural Architecture Search via Parameter Sharing" (2018) in TensorFlow.
 
 Includes code for CIFAR-10 image classification and Penn Tree Bank language modeling tasks.
@@ -69,7 +71,6 @@ A micro architecture can be specified by two sequences of cells concatenated aft
 
 ## Citations
 
-If you happen to use our work, please consider citing our paper.
 ```
 @inproceedings{enas,
   title     = {Efficient Neural Architecture Search via Parameter Sharing},

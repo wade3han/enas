@@ -3,7 +3,8 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import cPickle as pickle
+#import cPickle as pickle
+import pickle
 import shutil
 import sys
 import time
@@ -250,6 +251,7 @@ def train():
             child_ops["train_acc"],
             child_ops["train_op"],
           ]
+          ''' Step 1: Training models using weight sharing '''
           loss, lr, gn, tr_acc, _ = sess.run(run_ops)
           global_step = sess.run(child_ops["global_step"])
 
@@ -271,7 +273,8 @@ def train():
             log_string += " mins={:<10.2f}".format(
                 float(curr_time - start_time) / 60)
             print(log_string)
-            
+           
+          ''' Step 2: Training controller '''
           if actual_step % ops["eval_every"] == 0:
             if (FLAGS.controller_training and
                 epoch % FLAGS.controller_train_every == 0):
@@ -305,7 +308,7 @@ def train():
                       float(curr_time - start_time) / 60)
                   print(log_string)
 
-              print("Here are 10 architectures")
+              print(" - Here are 10 architectures")
               for _ in range(10):
                 arc, acc = sess.run([
                   controller_ops["sample_arc"],

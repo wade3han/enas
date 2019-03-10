@@ -31,7 +31,7 @@ class GeneralChild(Model):
                fixed_arc=None,
                out_filters_scale=1,
                num_layers=2,
-               num_branches=6,
+               num_branches=6, # Appended
                out_filters=24,
                keep_prob=1.0,
                batch_size=32,
@@ -207,11 +207,12 @@ class GeneralChild(Model):
       for layer_id in range(self.num_layers):
         with tf.variable_scope("layer_{0}".format(layer_id)):
           if self.fixed_arc is None:
-            x = self._enas_layer(layer_id, layers, start_idx, out_filters, is_training)
+            x = self._enas_layer(layer_id, layers, start_idx, out_filters, is_training) # sampling ENAS layer
           else:
-            x = self._fixed_layer(layer_id, layers, start_idx, out_filters, is_training)
+            x = self._fixed_layer(layer_id, layers, start_idx, out_filters, is_training) # if controller is fixed
           layers.append(x)
           if layer_id in self.pool_layers:
+            # sampling ENAS layer
             if self.fixed_arc is not None:
               out_filters *= 2
             with tf.variable_scope("pool_at_{0}".format(layer_id)):
@@ -291,15 +292,26 @@ class GeneralChild(Model):
           y = self._pool_branch(inputs, is_training, out_filters, "max",
                                 start_idx=0)
         branches[tf.equal(count, 5)] = lambda: y
-      out = tf.case(branches, default=lambda: tf.constant(0, tf.float32),
-                    exclusive=True)
+      # Adding end layer
+#      if self.num_branches >= 7:
+#          with tf.variable_scope("branch_6"):
+#              pass
+#
+#      out = tf.case(branches, default=lambda: tf.constant(0, tf.float32),
+#                    exclusive=True)
 
       if self.data_format == "NHWC":
-        out.set_shape([None, inp_h, inp_w, out_filters])
+        out = tf.case(branches, default=lambda: tf.constant(0, tf.float32, shape=[self.batch_size, inp_h, inp_w, out_filters]),
+                    exclusive=True)
+        #out.set_shape([self.batch_size, inp_h, inp_w, out_filters])
+        #out.set_shape([None, inp_h, inp_w, out_filters])
       elif self.data_format == "NCHW":
-        out.set_shape([None, out_filters, inp_h, inp_w])
+        out = tf.case(branches, default=lambda: tf.constant(0, tf.float32, shape=[self.batch_size, out_filters, inp_h, inp_w]),
+                    exclusive=True)
+        #out.set_shape([self.batch_size, out_filters, inp_h, inp_w])
+        #out.set_shape([None, out_filters, inp_h, inp_w])
     else:
-      count = self.sample_arc[start_idx:start_idx + 2 * self.num_branches]
+      count = self.sample_arc[start_idx : start_idx + 2 * self.num_branches]
       branches = []
       with tf.variable_scope("branch_0"):
         branches.append(self._conv_branch(inputs, 3, is_training, count[1],
@@ -363,7 +375,7 @@ class GeneralChild(Model):
                                     lambda: prev_layers[i],
                                     lambda: tf.zeros_like(prev_layers[i])))
         res_layers.append(out)
-        out = tf.add_n(res_layers)
+        out = tf.add_n(res_layers) # TODO #
         out = batch_norm(out, is_training, data_format=self.data_format)
 
     return out
@@ -603,8 +615,7 @@ class GeneralChild(Model):
     self.train_acc = tf.to_int32(self.train_acc)
     self.train_acc = tf.reduce_sum(self.train_acc)
 
-    tf_variables = [var
-        for var in tf.trainable_variables() if var.name.startswith(self.name)]
+    tf_variables = [var for var in tf.trainable_variables() if var.name.startswith(self.name)]
     self.num_vars = count_model_params(tf_variables)
     print("Model has {} params".format(self.num_vars))
 

@@ -184,7 +184,7 @@ def get_train_ops(
   else:
     learning_rate = tf.train.exponential_decay(
       lr_init, tf.maximum(train_step - lr_dec_start, 0), lr_dec_every,
-      lr_dec_rate, staircase=True)
+        lr_dec_rate, staircase=True)
     if lr_dec_min is not None:
       learning_rate = tf.maximum(learning_rate, lr_dec_min)
 
